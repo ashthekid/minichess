@@ -1,0 +1,514 @@
+import pygame
+from pygame.locals import *
+import numpy as np
+pygame.init()
+
+NB_L = 6# nombre de lignes dans la grille
+NB_C = 6# nombre de colonnes dans la grille
+L = 100 # largeur d'une case
+H = 100 # hauteur d'une case
+
+fenetre = pygame.display.set_mode((NB_L * H, NB_C * H))
+fond = pygame.image.load(".\\piece\\chessboard_6_6.png").convert()
+
+#### Charge les images de chaques pièces ####
+pion_blanc = pygame.image.load(".\\piece\\pion.png")
+pion_noir = pygame.image.load(".\\piece\\pionnoir.png")
+tour_blanc = pygame.image.load(".\\piece\\tour.png")
+tour_noir = pygame.image.load(".\\piece\\tournoire.png")
+fou_blanc = pygame.image.load(".\\piece\\fou.png")
+fou_noir = pygame.image.load(".\\piece\\founoir.png")
+queen_blanc = pygame.image.load(".\\piece\\reine.png")
+queen_noire = pygame.image.load(".\\piece\\reinenoire.png")
+king_blanc = pygame.image.load(".\\piece\\roi.png")
+king_noir = pygame.image.load(".\\piece\\roinoir.png")
+horse_blanc = pygame.image.load(".\\piece\\cavalier.png")
+horse_noir = pygame.image.load(".\\piece\\cavaliernoire.png")
+
+#### Recadre l'image du fond ####
+fond = pygame.transform.scale(fond, (NB_L*H, NB_C*H))
+
+#### Matrice avec toutes les pièces ####
+B = np.array([["tN", "fN", "qN", "kN", "hN", "-"],
+              ["-", "-", "-", "-", "-", "pN"],                                                                                                                                                                                                                                         
+              ["-", "-", "-", "-", "-", "-"],
+              ["-", "-", "-", "-", "-", "-"],
+              ["pB", "-", "-", "-", "-", "-"],
+              ["-", "hB", "qB", "kB", "fB", "tB"]])
+
+#### Lie les pièces avec les images ####
+def pionB():
+    global img_pos_pB, mat_pos_pB, position
+    posP = np.where((B == "pB"))
+    position = list(posP)
+    mat_pos_pB = position[0][0], position[1][0]
+    img_pos_pB = int(position[1][0] * 100), int(position[0][0] * 100)
+    
+def pionN():
+    global img_pos_pN, mat_pos_pN, position
+    posP = np.where((B == "pN"))
+    position = list(posP)
+    mat_pos_pN = position[0][0], position[1][0]
+    img_pos_pN = int(position[1][0] * 100), int(position[0][0] * 100)
+
+def tourB():
+    global img_pos_tB, mat_pos_tB, position,posTB 
+    posTB = np.where((B == "tB"))
+    position = list(posTB)
+    mat_pos_tB = position[0][0], position[1][0]
+    img_pos_tB = int(position[1][0] * 100), int(position[0][0] * 100)
+    
+def tourN():
+    global img_pos_tN, mat_pos_tN, position, posTN
+    posTN = np.where((B == "tN"))
+    position = list(posTN)
+    mat_pos_tN = position[0][0], position[1][0]
+    img_pos_tN = int(position[1][0] * 100), int(position[0][0] * 100)
+
+def fouB():
+    global img_pos_fB, mat_pos_fB, position, posfB
+    posfB = np.where((B == "fB"))
+    position = list(posfB)
+    mat_pos_fB = position[0][0], position[1][0]
+    img_pos_fB = int(position[1][0] * 100), int(position[0][0] * 100)
+
+def fouN():
+    global img_pos_fN, mat_pos_fN, position, posfN
+    posfN = np.where((B == "fN"))
+    position = list(posfN)
+    mat_pos_fN = position[0], position[1]
+    img_pos_fN = int(position[1][0] * 100), int(position[0][0] * 100)
+
+def queenB():
+    global img_pos_qB, mat_pos_qB, position, posqB
+    posqB = np.where((B == "qB"))
+    position = list(posqB)
+    mat_pos_qB = position[0], position[1]
+    img_pos_qB = int(position[1][0] * 100), int(position[0][0] * 100)
+
+def queenN():
+    global img_pos_qN, mat_pos_qN, position, posqN
+    posqN = np.where((B == "qN"))
+    position = list(posqN)
+    mat_pos_qN = position[0], position[1]
+    img_pos_qN = int(position[1][0] * 100), int(position[0][0] * 100)
+
+def kingB():
+    global img_pos_kB, mat_pos_kB, position, poskB
+    poskB = np.where((B == "kB"))
+    position = list(poskB)
+    mat_pos_kB = position[0], position[1]
+    img_pos_kB = int(position[1][0] * 100), int(position[0][0] * 100)
+
+def kingN():
+    global img_pos_kN, mat_pos_kN, position, poskN
+    poskN = np.where((B == "kN"))
+    position = list(poskN)
+    mat_pos_kN = position[0], position[1]
+    img_pos_kN = int(position[1][0] * 100), int(position[0][0] * 100)
+
+def horseB():
+    global img_pos_hB, mat_pos_hB, position, poshB
+    poshB = np.where((B == "hB"))
+    position = list(poshB)
+    mat_pos_hB = position[0], position[1]
+    img_pos_hB = int(position[1][0] * 100), int(position[0][0] * 100)
+
+def horseN():
+    global img_pos_hN, mat_pos_hN, position, poshN
+    poshN = np.where((B == "hN"))
+    position = list(poshN)
+    mat_pos_hN = position[0], position[1]
+    img_pos_hN = int(position[1][0] * 100), int(position[0][0] * 100)
+
+
+
+# Fonction permettant de gérer l'ordre de jeu #
+def refresh_pos():
+    global turn, ligne, colonne
+    turn += 1         
+    B[ligne][colonne] = pion_selected
+    B[oldpos[0]][oldpos[1]] = "-"
+    print(B)
+
+# Fonction de mode déplacement #
+def movemode():
+    global clic, MOVE, colonne, ligne, oldpos, pion_selected, posTN, posTB, posfB, posfN, posqB
+ 
+    for event in pygame.event.get():
+        # Détecte les cliques et les cases en fonction des paramètre à effectuer #
+        if event.type == MOUSEBUTTONDOWN:
+            souris_pos = event.pos
+            colonne_decimal = souris_pos[0] / L
+            ligne_decimal = souris_pos[1] / L
+
+            colonne = int(colonne_decimal)
+            ligne = int(ligne_decimal) 
+
+            if event.button == 1:
+
+                # Description des déplacement de chaques pièces #
+
+                if pion_selected == "pB":
+
+                    # Si le clic sur la case séléctionnée se situe à une case devant le pion #
+
+                    if colonne == oldpos[1] and ligne == oldpos[0] - 1 and B[ligne][colonne] == "-":
+                        refresh_pos()
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+                                
+                if pion_selected == "pN":
+
+                    # Si le clic sur la case séléctionnée se situe à une case devant le pion #
+
+                    if colonne == oldpos[1] and ligne == oldpos[0] + 1 and B[ligne][colonne] == "-":
+                        refresh_pos()
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+
+
+                if pion_selected == "tB":
+
+                    # Récupère l'indice de chaque cases se situants dans la ligne et la colonne de la tour séléctionnée #
+
+                    indice_ligne_tB = posTB[0][0]
+                    indice_colonne_tB = posTB[1][0]
+
+                    # Si la case cliquée appartient à l'un des indices présents dans l'analyse précedantes #
+
+                    if colonne == indice_colonne_tB or ligne == indice_ligne_tB:
+                        if B[ligne][colonne] == "-":                    
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+                
+                if pion_selected == "tN":
+
+                    # Récupère l'indice de chaque cases se situants dans la ligne et la colonne de la tour séléctionnée #
+
+                    indice_ligne_tB = posTN[0][0]
+                    indice_colonne_tB = posTN[1][0]
+
+                    # Si la case cliquée appartient à l'un des indices présents dans l'analyse précedantes #
+
+                    if colonne == indice_colonne_tB or ligne == indice_ligne_tB:
+                        if B[ligne][colonne] == "-":                    
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+
+                if pion_selected == "fB":
+                    
+                    # Calcule si la diffénce entre les valeur absolue de la l'ancienne position et celle de la nouvelle (donc analyse les diagonales) #
+
+                    if abs(ligne - oldpos[0]) == abs(colonne - oldpos[1]):
+                        if B[ligne][colonne] == "-":
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+
+
+                if pion_selected == "fN":
+                    
+                    # Calcule si la diffénce entre les valeur absolue de la l'ancienne position et celle de la nouvelle (donc analyse les diagonales) #
+
+                    if abs(ligne - oldpos[0]) == abs(colonne - oldpos[1]):
+                        if B[ligne][colonne] == "-":
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+                
+                if pion_selected == "qB":
+
+                    # Un mélange du code du fou et de la tour #
+
+                    indice_ligne_qB = posqB[0][0]
+                    indice_colonne_qB = posqB[1][0]
+
+                    if abs(ligne - oldpos[0]) == abs(colonne - oldpos[1]):
+                        if B[ligne][colonne] == "-":
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    elif colonne == indice_colonne_qB or ligne == indice_ligne_qB:
+                        if B[ligne][colonne] == "-":                    
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+
+                if pion_selected == "qN":
+
+                    # Un mélange du code du fou et de la tour #
+
+                    indice_ligne_qN = posqN[0][0]
+                    indice_colonne_qN = posqN[1][0]
+
+                    if abs(ligne - oldpos[0]) == abs(colonne - oldpos[1]):
+                        if B[ligne][colonne] == "-":
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    elif colonne == indice_colonne_qN or ligne == indice_ligne_qN:
+                        if B[ligne][colonne] == "-":                    
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+
+                if pion_selected == "kB":
+
+                    # Calcule la valeur absolue de la position initale et celle de la case cliquée dans un rayon d'une case #
+                    
+                    if abs(ligne - oldpos[0]) <= 1 and abs(colonne - oldpos[1]) <= 1:
+                        
+                        if B[ligne][colonne] == "-":
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible: Case occupée")
+                    else:
+                        print("Déplacement impossible: Mauvaise distance de déplacement")
+                        MOVE = False
+
+                if pion_selected == "kN":
+
+                    # Calcule la valeur absolue de la position initale et celle de la case cliquée dans un rayon d'une case #
+                   
+                    if abs(ligne - oldpos[0]) <= 1 and abs(colonne - oldpos[1]) <= 1:
+                        
+                        if B[ligne][colonne] == "-":
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible: Case occupée")
+                    else:
+                        print("Déplacement impossible: Mauvaise distance de déplacement")
+                        MOVE = False
+
+                if pion_selected == "hB":
+
+                    # Liste toute les position possibles ou peut aller le cavalier #
+                    
+                    possible_moves = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
+                    
+                    # Calcule la différence entre la position initale et la case cliquée, puis verifie si celle ci rentre dans les mouvements possible #
+                
+                    if (colonne - oldpos[1], ligne - oldpos[0]) in possible_moves:
+                        if B[ligne][colonne] == "-":
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+
+                if pion_selected == "hN":
+                    
+                    # Liste toute les position possibles ou peut aller le cavalier #
+
+                    possible_moves = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
+                    
+                    # Calcule la différence entre la position initale et la case cliquée, puis verifie si celle ci rentre dans les mouvements possible #
+
+                    if (colonne - oldpos[1], ligne - oldpos[0]) in possible_moves:
+                        if B[ligne][colonne] == "-":
+                            refresh_pos()
+                        else:
+                            print("Déplacement impossible")
+                    else:
+                        print("Déplacement impossible")
+                        MOVE = False
+
+
+
+                    
+                # Quand la case dans la matrice à été actualisé, quitter le mode déplacement #
+
+                if B[oldpos[0]][oldpos[1]] == "-":
+                    MOVE = False
+
+# Initialise les compteur de clic et de tour qui gèrent l'ordre de jeu #
+turn = 0
+clic = 0
+MOVE = False
+continuer = 1
+
+while continuer:
+
+    # Début de la boucle infinie, à chaque fin de condition, tout se réinitialise (image, conditions, compteur,...) #
+
+    # Initialise les fonction de chaques pions #
+
+    pionB()    
+    pionN()
+    tourB()
+    tourN()
+    fouB()
+    fouN()
+    queenB()
+    queenN()
+    kingB()
+    kingN()
+    horseB()
+    horseN()
+
+    # Affiche toute les image de chaques pions #
+
+    fenetre.blit(fond, (0, 0)) 
+    fenetre.blit(pion_blanc, (img_pos_pB))
+    fenetre.blit(pion_noir, (img_pos_pN))
+    fenetre.blit(tour_blanc, (img_pos_tB))
+    fenetre.blit(tour_noir, (img_pos_tN))
+    fenetre.blit(fou_blanc, (img_pos_fB))
+    fenetre.blit(fou_noir, (img_pos_fN))
+    fenetre.blit(queen_blanc, (img_pos_qB))
+    fenetre.blit(queen_noire, (img_pos_qN))
+    fenetre.blit(king_blanc, (img_pos_kB))
+    fenetre.blit(king_noir, (img_pos_kN))
+    fenetre.blit(horse_blanc, (img_pos_hB))
+    fenetre.blit(horse_noir, (img_pos_hN))
+
+    # Mode de séléction #
+
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            continuer = 0
+        
+        if event.type == MOUSEBUTTONDOWN:
+            if event.button == 1:
+                souris_pos = event.pos
+                colonne_decimal = souris_pos[0] / L
+                ligne_decimal = souris_pos[1] / L
+
+                colonne = int(colonne_decimal)
+                ligne = int(ligne_decimal) 
+                
+                # pions blancs #
+
+                if turn % 2 == 0:
+                    print(turn)
+                    print("White turn")
+
+                    if (ligne,colonne) == mat_pos_pB:                    
+                        print("pion blanc selectionné ! ")
+                        pion_selected = "pB"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+                    
+                    if (ligne,colonne) == mat_pos_tB:                    
+                        print("tour blanc selectionné ! ")
+                        pion_selected = "tB"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+
+                    if (ligne,colonne) == mat_pos_fB: 
+                        print("fou blanc selectionné ! ")
+                        pion_selected = "fB"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+
+                    if (ligne,colonne) == mat_pos_qB:                    
+                        print("reine blanc selectionné ! ")
+                        pion_selected = "qB"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+                    
+                    if (ligne,colonne) == mat_pos_kB:                    
+                        print("roi blanc selectionné ! ")
+                        pion_selected = "kB"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+
+                    if (ligne,colonne) == mat_pos_hB:                    
+                        print("cavalier blanc selectionné ! ")
+                        pion_selected = "hB"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+
+                # pions noir #
+                        
+                if turn % 2 == 1: 
+                    print(turn)
+                    print("Black turn")
+
+                    if (ligne,colonne) == mat_pos_pN:
+                        print("pion noir selectionné ! ")
+                        pion_selected = "pN"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+                    
+                    if (ligne,colonne) == mat_pos_tN:                    
+                        print("tour noir selectionné ! ")
+                        pion_selected = "tN"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+
+                    if (ligne,colonne) == mat_pos_fN: 
+                        print("fou noir selectionné ! ")
+                        pion_selected = "fN"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+                    
+                    if (ligne,colonne) == mat_pos_qN:                    
+                        print("reine noire selectionné ! ")
+                        pion_selected = "qN"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+
+                    if (ligne,colonne) == mat_pos_kN:                    
+                        print("roi blanc selectionné ! ")
+                        pion_selected = "kN"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+
+                    if (ligne,colonne) == mat_pos_hN:                    
+                        print("cavalier noir selectionné ! ")
+                        pion_selected = "hN"
+                        oldpos = ligne, colonne
+                        MOVE = True
+                        while MOVE == True:
+                            movemode()
+
+    pygame.display.flip()
+
+pygame.quit()

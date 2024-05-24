@@ -1,0 +1,229 @@
+import pygame
+from pygame.locals import *
+import numpy as np
+
+pygame.init()
+
+# Constantes
+NB_L, NB_C = 6, 6  # Dimensions de la grille
+L, H = 100, 100    # Dimensions de la cellule
+
+# Initialisation de la fenêtre
+fenetre = pygame.display.set_mode((NB_L * H, NB_C * H))
+fond = pygame.image.load("./piece/chessboard_6_6.png").convert()
+fond = pygame.transform.scale(fond, (NB_L * H, NB_C * H))
+
+# Chargement des images et redimensionnement pour s'adapter aux cellules
+pieces = {
+    "pB": pygame.image.load("./piece/pion.png"),
+    "pN": pygame.image.load("./piece/pionnoir.png"),
+    "tB": pygame.image.load("./piece/tour.png"),
+    "tN": pygame.image.load("./piece/tournoire.png"),
+    "fB": pygame.image.load("./piece/fou.png"),
+    "fN": pygame.image.load("./piece/founoir.png"),
+    "qB": pygame.image.load("./piece/reine.png"),
+    "qN": pygame.image.load("./piece/reinenoire.png"),
+    "kB": pygame.image.load("./piece/roi.png"),
+    "kN": pygame.image.load("./piece/roinoir.png"),
+    "hB": pygame.image.load("./piece/cavalier.png"),
+    "hN": pygame.image.load("./piece/cavaliernoire.png"),
+}
+
+# Redimensionner chaque image de pièce pour qu'elle corresponde aux dimensions de la cellule
+for key in pieces:
+    pieces[key] = pygame.transform.scale(pieces[key], (L, H))
+
+# Configuration initiale du plateau
+B = np.array([
+    ["tN", "fN", "qN", "kN", "hN", "tN"],
+    ["pN", "pN", "pN", "pN", "pN", "pN"],
+    ["-", "-", "-", "-", "-", "-"],
+    ["-", "-", "-", "-", "-", "-"],
+    ["pB", "pB", "pB", "pB", "pB", "pB"],
+    ["tB", "hB", "qB", "kB", "fB", "tB"]
+])
+
+# Fonction pour obtenir les positions des pièces sur le plateau
+def get_piece_positions():
+    positions = {}
+    for piece, img in pieces.items():
+        pos = np.where(B == piece)
+        if pos[0].size > 0:
+            for i in range(len(pos[0])):
+                positions[(pos[0][i], pos[1][i])] = piece
+    return positions
+
+# Fonction pour mettre à jour la position d'une pièce sur le plateau
+def refresh_pos(oldpos, newpos, piece):
+    global B
+    eliminer_piece(newpos)  # Éliminer la pièce si nécessaire
+    B[oldpos] = "-"  # Mettre à jour l'ancienne position avec un espace vide
+    B[newpos] = piece  # Mettre à jour la nouvelle position avec la pièce déplacée
+
+# Fonction pour vérifier si un mouvement est valide pour une pièce donnée
+def is_valid_move(piece, oldpos, newpos):
+    (old_row, old_col), (new_row, new_col) = oldpos, newpos
+    
+    # Vérifier si la nouvelle position est occupée par une pièce de la même couleur
+    if B[new_row, new_col] != "-" and B[new_row, new_col][1] == piece[1]:
+        return False
+    
+    # Règles de déplacement pour les pièces blanches
+    if piece[1] == 'B':
+        if piece[0] == 'p':  # Déplacement du pion
+            if old_col == new_col and new_row == old_row - 1 and B[new_row, new_col] == "-":
+                return True
+            if abs(new_col - old_col) == 1 and new_row == old_row - 1 and B[new_row, new_col] != "-" and B[new_row, new_col][1] == 'N':
+                return True
+        if piece[0] == 't':  # Déplacement de la tour
+            if old_col == new_col or old_row == new_row:
+                if not is_path_blocked(oldpos, newpos):
+                    return True
+        if piece[0] == 'f':  # Déplacement du fou
+            if abs(new_row - old_row) == abs(new_col - old_col):
+                if not is_path_blocked(oldpos, newpos):
+                    return True
+        if piece[0] == 'q':  # Déplacement de la reine
+            if (abs(new_row - old_row) == abs(new_col - old_col)) or (old_col == new_col or old_row == new_row):
+                if not is_path_blocked(oldpos, newpos):
+                    return True
+        if piece[0] == 'k':  # Déplacement du roi
+            if abs(new_row - old_row) <= 1 and abs(new_col - old_col) <= 1:
+                return True
+        if piece[0] == 'h':  # Déplacement du cavalier
+            if (new_col - old_col, new_row - old_row) in [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]:
+                return True
+    
+    # Règles de déplacement pour les pièces noires
+    if piece[1] == 'N':
+        if piece[0] == 'p':  # Déplacement du pion
+            if old_col == new_col and new_row == old_row + 1 and B[new_row, new_col] == "-":
+                return True
+            if abs(new_col - old_col) == 1 and new_row == old_row + 1 and B[new_row, new_col] != "-" and B[new_row, new_col][1] == 'B':
+                return True
+        if piece[0] == 't':  # Déplacement de la tour
+            if old_col == new_col or old_row == new_row:
+                if not is_path_blocked(oldpos, newpos):
+                    return True
+        if piece[0] == 'f':  # Déplacement du fou
+            if abs(new_row - old_row) == abs(new_col - old_col):
+                if not is_path_blocked(oldpos, newpos):
+                    return True
+        if piece[0] == 'q':  # Déplacement de la reine
+            if (abs(new_row - old_row) == abs(new_col - old_col)) or (old_col == new_col or old_row == new_row):
+                if not is_path_blocked(oldpos, newpos):
+                    return True
+        if piece[0] == 'k':  # Déplacement du roi
+            if abs(new_row - old_row) <= 1 and abs(new_col - old_col) <= 1:
+                return True
+        if piece[0] == 'h':  # Déplacement du cavalier
+            if (new_col - old_col, new_row - old_row) in [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]:
+                return True
+    return False
+
+# Vérifie si le chemin entre deux positions est bloqué par d'autres pièces
+def is_path_blocked(oldpos, newpos):
+    (old_row, old_col), (new_row, new_col) = oldpos, newpos
+    
+    if old_row == new_row:
+        step = 1 if old_col < new_col else -1
+        for col in range(old_col + step, new_col, step):
+            if B[old_row, col] != "-":
+                return True
+    elif old_col == new_col:
+        step = 1 if old_row < new_row else -1
+        for row in range(old_row + step, new_row, step):
+            if B[row, old_col] != "-":
+                return True
+    else:
+        row_step = 1 if old_row < new_row else -1
+        col_step = 1 if old_col < new_col else -1
+        row, col = old_row + row_step, old_col + col_step
+        while (row, col) != newpos:
+            if B[row, col] != "-":
+                return True
+            row += row_step
+            col += col_step
+    return False
+
+# Liste pour stocker les pièces éliminées
+pieces_eliminees = []
+
+# Fonction pour éliminer une pièce et la stocker dans la liste des pièces éliminées
+def eliminer_piece(pos):
+    global B
+    piece = B[pos]
+    pieces_eliminees.append(piece)
+    B[pos] = "-"  # Remplacer la pièce éliminée par un espace vide dans le tableau
+    print("La pièce", piece, "a été éliminée.")
+
+# Fonction pour détecter si le roi est en échec
+def est_echec(tour):
+    roi = "kB" if tour % 2 == 0 else "kN"
+    roi_pos = np.where(B == roi)
+    for i, j in zip(roi_pos[0], roi_pos[1]):
+        if len(B[i][j]) >= 2 and B[i][j][1] != roi[1] and is_valid_move(B[i][j], (i, j), (roi_pos[0][0], roi_pos[1][0])):
+            return True
+    return False
+
+# Fonction pour détecter si le roi est en échec et mat
+def est_echec_mat(tour):
+    roi = "kB" if tour % 2 == 0 else "kN"
+    roi_pos = np.where(B == roi)
+    for i, j in zip(roi_pos[0], roi_pos[1]):
+        if len(B[i][j]) >= 2 and B[i][j][1] != roi[1]:
+            return False
+    # Vérifier si le roi peut échapper à l'échec en se déplaçant
+    for i, j in zip(roi_pos[0], roi_pos[1]):
+        for new_row in range(i - 1, i + 2):
+            for new_col in range(j - 1, j + 2):
+                if (new_row, new_col) != (i, j) and 0 <= new_row < NB_L and 0 <= new_col < NB_C:
+                    if is_valid_move(roi, (i, j), (new_row, new_col)):
+                        return False
+    return True
+
+
+
+# Tour de jeu (0: pièces blanches, 1: pièces noires)
+tour = 0
+MOVE = False
+continuer = 1
+
+while continuer:
+    fenetre.blit(fond, (0, 0))
+    positions = get_piece_positions()
+    for pos, piece in positions.items():
+        fenetre.blit(pieces[piece], (pos[1] * L, pos[0] * H))
+
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            continuer = 0
+        elif event.type == MOUSEBUTTONDOWN and event.button == 1:
+            souris_pos = event.pos
+            colonne, ligne = souris_pos[0] // L, souris_pos[1] // L
+            
+            if MOVE:
+                if is_valid_move(pion_selected, oldpos, (ligne, colonne)):
+                    refresh_pos(oldpos, (ligne, colonne), pion_selected)
+                    tour += 1
+                    print("Le mouvement est valide. Tableau mis à jour :")
+                    if est_echec(tour):
+                        print("Echec !")
+                    if est_echec_mat(tour):
+                        print("Echec et mat !")
+                else:
+                    print("Le mouvement n'est pas valide. Le tableau reste inchangé.")
+                MOVE = False
+            else:
+                pion_selected = B[ligne, colonne]
+                if pion_selected != "-" and ((tour % 2 == 0 and pion_selected[1] == 'B') or (tour % 2 == 1 and pion_selected[1] == 'N')):
+                    oldpos = (ligne, colonne)
+                    MOVE = True
+                else:
+                    print("Sélection invalide. Veuillez sélectionner une pièce de votre couleur.")
+                print("Case sélectionnée :", (ligne, colonne), "Pièce sélectionnée :", pion_selected)
+
+    pygame.display.flip()
+
+pygame.quit()
+
